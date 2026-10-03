@@ -17,7 +17,7 @@ final class RateLimitControllerSupport {
             UserTier tier,
             String successBody) {
         if (userId.isBlank()) {
-            return ResponseEntity.badRequest().body("X-User-Id must not be blank");
+                return ResponseEntity.badRequest().body("userId query parameter must not be blank");
         }
         if (!rateLimitService.allowRequest(new User(userId, tier))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("Rate limit exceeded");

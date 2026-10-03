@@ -1,7 +1,7 @@
 package com.example.rate_limitter.Controllers;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,15 +20,15 @@ public class controller1 {
 
     @GetMapping("/c1")
     public ResponseEntity<String> getMethod1(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Tier") UserTier tier) {
+            @RequestParam String userId,
+            @RequestParam UserTier tier) {
         return RateLimitControllerSupport.respond(rateLimitService, userId, tier, "Request through V1/c1");
     }
 
     @GetMapping("/c2")
     public ResponseEntity<String> getMethod2(
-            @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-User-Tier") UserTier tier) {
+            @RequestParam String userId,
+            @RequestParam UserTier tier) {
         return RateLimitControllerSupport.respond(rateLimitService, userId, tier, "Request through V1/c2");
     }
 }
