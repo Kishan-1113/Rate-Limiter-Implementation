@@ -21,12 +21,12 @@ public class RateLimitService {
         // 20 reqs/min
         rateLimiters.put(UserTier.FREE,
                 RateLimiterFactory.createLimiter(RateLimitType.FIXED_WINDOW,
-                        new RateLimitConfig(20, 60)));
+                        new RateLimitConfig(5, 60)));
 
         // 50reqs/min
         rateLimiters.put(UserTier.PREMIUM,
-                RateLimiterFactory.createLimiter(RateLimitType.FIXED_WINDOW,
-                        new RateLimitConfig(50, 60)));
+                RateLimiterFactory.createLimiter(RateLimitType.SLIDING_WINDOW,
+                        new RateLimitConfig(12, 60)));
     }
 
     public boolean allowRequest(User user) {
