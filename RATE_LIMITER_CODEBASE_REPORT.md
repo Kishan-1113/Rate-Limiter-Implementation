@@ -37,10 +37,13 @@ Base route: `/api/v1`.
 - Constructor — Receives the shared `RateLimitService` from Spring using
   constructor injection.
 - `getMethod1(String userId, UserTier tier)` — Handles `GET /api/v1/c1`,
-  reads `userId` and `tier` query parameters, and forwards them to shared
-  controller support.
+  reads `userId` and `tier` query parameters, then validates and rate-limits
+  the request in the controller.
 - `getMethod2(String userId, UserTier tier)` — Handles `GET /api/v1/c2` in the
   same way.
+- `handleRequest(String userId, UserTier tier, String successBody)` — Logs the
+  incoming identity and tier, handles blank IDs, calls the service, and logs
+  the response status.
 
 #### `src/main/java/com/example/rate_limitter/Controllers/controller2.java`
 
@@ -49,21 +52,16 @@ Base route: `/api/v2`.
 - Constructor — Receives the shared `RateLimitService` from Spring.
 - `getMethod1(String userId, UserTier tier)` — Handles `GET /api/v2/c1`.
 - `getMethod2(String userId, UserTier tier)` — Handles `GET /api/v2/c2`.
+- `handleRequest(String userId, UserTier tier, String successBody)` — Performs
+  the same validation, rate limiting, and logging as the V1 controller.
 
 Both versions pass requests to the same Spring service bean and therefore use
 the same per-tier limiter instances and quota state.
 
-#### `src/main/java/com/example/rate_limitter/Controllers/RateLimitControllerSupport.java`
-
-- Private constructor — Prevents instantiation; this is a utility class.
-- `respond(RateLimitService, String, UserTier, String)` — Rejects a blank user
-  ID with `400 Bad Request`; builds a `User` and asks the service whether the
-  request is allowed; returns `429 Too Many Requests` when denied or `200 OK`
-  with the endpoint-specific response text when allowed.
-
-Spring performs query-parameter binding before this method runs. Missing
-parameters or a tier that cannot be converted to `FREE`/`PREMIUM` are rejected
-as a bad request by Spring MVC.
+Each controller logs the incoming user ID and tier, then logs the HTTP response
+status for that user. Spring performs query-parameter binding before the
+controller method runs. Missing parameters or a tier that cannot be converted
+to `FREE`/`PREMIUM` are rejected as a bad request by Spring MVC.
 
 ### Domain model and enums
 
@@ -192,16 +190,15 @@ GET /api/v1/c1?userId=user-123&tier=FREE
 2. Spring converts the `userId` string and `tier` enum query parameters into
    method arguments. A missing parameter or invalid enum value results in a
    `400 Bad Request`.
-3. The controller calls `RateLimitControllerSupport.respond`, passing the
-   service, identity, tier, and success text.
-4. The support method rejects a blank ID with `400`; otherwise, it constructs
-   a `User` and calls `RateLimitService.allowRequest`.
+3. The controller logs the incoming user ID and tier.
+4. The controller rejects a blank ID with `400`; otherwise, it constructs a
+    `User` and calls `RateLimitService.allowRequest`.
 5. The service validates the object, selects the limiter associated with the
    tier, and calls the limiter with the user's ID.
 6. The concrete limiter updates that user's state and returns `true` or
    `false`.
-7. The controller support returns `200 OK` on `true`, or `429 Too Many Requests`
-   on `false`.
+7. The controller returns `200 OK` on `true`, or `429 Too Many Requests` on
+    `false`, and logs the response status with the user ID.
 
 The four routes are `/api/v1/c1`, `/api/v1/c2`, `/api/v2/c1`, and
 `/api/v2/c2`. All share the same service and quota state while the application
